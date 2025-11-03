@@ -1,8 +1,0 @@
-#JSGF V1.0;
-grammar questions;
-public <question> =<location_question> | <course_time_question>;
-
-<location_question>=(unde este | spune-mi unde este | unde gasesc | unde e) <location>;
-<location>=sala de curs | secretariatul | george baritiu | biblioteca;
-<course_time_question>=(ce ora avem | la ce ora e | cand e | cand avem | ce ore avem | ce cursuri avem) <course> [acum | astazi];
-<course>=analiza matematica | sisteme inteligente | algebra liniara | matematici speciale | programare functionala | facultatea de calculatoare; 
