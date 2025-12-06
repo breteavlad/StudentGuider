@@ -157,7 +157,7 @@ class MapAssistant:
         map_file = os.path.abspath("route_map.html")
         m.save(map_file)
         
-        # 🔥 CRITICAL FIX: Open browser in background without blocking
+        #  Open browser in background without blocking
         try:
             # Use subprocess.Popen with DETACHED_PROCESS to not block
             subprocess.Popen(
