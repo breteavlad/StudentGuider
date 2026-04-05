@@ -128,7 +128,22 @@ def open_schedule():
         return "I've opened the class schedule for you."
     else:
         return "Sorry, I couldn't open the schedule on your device."
+    
+def open_schedule_for_student(student_name, conn=None):
+    """
+    Open the 4R tab of the class schedule for any student.
+    Ignores the student's group in the database.
+    """
+    # Google Sheet 4R tab URL
+    SHEET_ID = "1yCFgf5cqWthT9ckSHwLiSsKxBq1yChmIpLneviGpuoY"
+    GID_4R = "1012002345"
 
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit?gid={GID_4R}"
+
+    if open_in_browser(url):
+        return "I've opened the 4R class schedule."
+    else:
+        return "Sorry, I couldn't open the schedule."
 
 def list_announcements_verbally():
     """Generate a spoken summary of announcements."""
@@ -294,3 +309,45 @@ def is_announcement_number_query(question_text):
     if match:
         return match.group(1)
     return None
+
+def open_schedule_for_student_2(student_name, conn):
+    cursor = conn.cursor()
+
+    #  Get the group from the database
+    cursor.execute("SELECT grupa FROM students WHERE nume = ?", (student_name,))
+    result = cursor.fetchone()
+    if not result:
+        return "Sorry, I couldn't find your group in the database."
+
+    grupa = result[0].upper()  
+
+    #  Extract year and section
+    if len(grupa) < 2:
+        return f"Invalid group code: {grupa}"
+
+    year_digit = grupa[-2]  # second-to-last digit → year
+    section = grupa[-1]     # last character → section/language
+    key = f"{year_digit}{section}"
+
+    #  Map to GID
+    GROUP_TAB_GIDS = {
+        "4R": "1012002345",  # 4th-year Romanian
+        "3R": "450167640",   # 3rd-year Romanian
+        "2R": "1107536232",   # 2nd-year Romanian
+        "1R": "102615779",   # 1st-year Romanian
+        "4E": "86973590",
+        "3E": "1006028868",
+        "2E": "514013824",
+        "1E": "49491229"
+    }
+
+    gid = GROUP_TAB_GIDS.get(key)
+    if not gid:
+        return f"No schedule configured for your group {grupa} (key={key})"
+
+    #  Build URL and open
+    url = f"https://docs.google.com/spreadsheets/d/1yCFgf5cqWthT9ckSHwLiSsKxBq1yChmIpLneviGpuoY/edit?gid={gid}"
+    if open_in_browser(url):
+        return f"I've opened the schedule for your group {grupa}."
+    else:
+        return "Sorry, I couldn't open your schedule."

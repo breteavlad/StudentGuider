@@ -182,5 +182,5 @@ class MapAssistant:
 
         print(f"[INFO] Map saved to {map_file} - {dest_name} ({dist_km:.2f} km away).")
         
-        # Return both values clearly
+        
         return (float(dist_km), dest_name)
