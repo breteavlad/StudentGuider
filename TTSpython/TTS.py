@@ -25,9 +25,12 @@ def normalize(text):
     return re.sub(r"[^\w\s]", "", text).strip().lower()
 
 
-# -------------------------
-# Database Search (PERSONALIZED)
-# -------------------------
+# Try to match the question against stored Q&A.
+# Priority:
+#   1. Lab-specific (group)
+#   2. Series-level
+#   3. General fallback
+# Fuzzy match because speech recognition is noisy.
 
 def search_database(question_text, cursor, grupa, serie):
     question_lower = question_text.lower()
@@ -59,9 +62,9 @@ def search_database(question_text, cursor, grupa, serie):
     best, score = process.extractOne(norm_q, list(norm_map.keys()))
 
     
-    print(f"[DEBUG] Fuzzy input: {question_text}")
-    print(f"[DEBUG] Best match: {best}")
-    print(f"[DEBUG] Score: {score}")
+    print(f" Fuzzy input: {question_text}")
+    print(f" Best match: {best}")
+    print(f" Score: {score}")
 
     if score > 70:
         return norm_map[best][1]
@@ -76,7 +79,7 @@ def search_database(question_text, cursor, grupa, serie):
 def get_response(receiver, conn, mapper, question_text, conversation_state, student_name, grupa, serie):
     cursor = conn.cursor()
     query_lower = question_text.lower().strip()
-    print(f"[DEBUG] Processing question: {question_text}")
+    print(f" Processing question: {question_text}")
 
     # initialize number_str
     number_str = None
@@ -86,28 +89,28 @@ def get_response(receiver, conn, mapper, question_text, conversation_state, stud
         number_str = is_announcement_number_query(question_text)
         if number_str:
             conversation_state["waiting_for_announcement_number"] = False  
-            print(f"[DEBUG] Opening announcement #{number_str}")
+            print(f" Opening announcement #{number_str}")
             result = open_announcement_by_number(number_str)
             return result if result else "Couldn't open the announcement."
         else:
             # still waiting for number
-            print("[DEBUG] Didn't understand the number, still waiting...")
+            print(" Didn't understand the number, still waiting...")
             return "I didn't catch that number. Please say a number like one, two, or three."
 
     # --- Schedule ---
     if is_schedule_query(question_text):
-        print(f"[DEBUG] Schedule detected for {student_name}")
+        print(f" Schedule detected for {student_name}")
         try:
             result = open_schedule_for_student_2(student_name, conn)
             return result if result else "I couldn't open your schedule."
         except Exception as e:
-            print(f"[ERROR] Schedule error: {e}")
+            print(f" Schedule error: {e}")
             return "There was an error opening your schedule."
 
     # --- Announcements ---
     if "announcement" in query_lower:
         conversation_state["waiting_for_announcement_number"] = True
-        print("[DEBUG] Listing announcements")
+        print(" Listing announcements")
         return list_announcements_verbally()
 
     # --- Map ---
@@ -118,7 +121,7 @@ def get_response(receiver, conn, mapper, question_text, conversation_state, stud
             query_lower
         ).strip()
 
-        print(f"[DEBUG] Map request: {place_name}")
+        print(f" Map request: {place_name}")
 
         if place_name:
             try:
@@ -129,7 +132,7 @@ def get_response(receiver, conn, mapper, question_text, conversation_state, stud
                 else:
                     return f"I couldn't find {place_name}."
             except Exception as e:
-                print(f"[ERROR] Map error: {e}")
+                print(f" Map error: {e}")
                 return "Map error occurred."
         else:
             return "What place should I show?"
@@ -137,10 +140,10 @@ def get_response(receiver, conn, mapper, question_text, conversation_state, stud
     # --- Database fallback (PERSONALIZED) ---
     answer = search_database(question_text, cursor, grupa, serie)
     if answer:
-        print(f"[DEBUG] DB answer: {answer}")
+        print(f" DB answer: {answer}")
         return answer
 
-    print("[DEBUG] No response found")
+    print(" No response found")
     return "Sorry, I couldn't understand your question."
 
 
@@ -150,7 +153,7 @@ def get_response(receiver, conn, mapper, question_text, conversation_state, stud
 
 def speak_response(text):
     try:
-        print(f"[DEBUG] Speaking: {text}")
+        print(f"Speaking: {text}")
 
         tts = gTTS(text=text, lang="en")
         tts.save("response.mp3")
@@ -168,7 +171,7 @@ def speak_response(text):
             os.remove("response.mp3")
 
     except Exception as e:
-        print(f"[ERROR] TTS error: {e}")
+        print(f" TTS error: {e}")
 
 
 # -------------------------
@@ -189,7 +192,7 @@ def interaction_loop(MAX_IDLE, receiver, student_name, conn, mapper, grupa, seri
             speak_response(f"Hello, {student_name}, how can I help you?")
             prompted = True
 
-        print("[INFO] Listening...")
+        print(" Listening...")
         audio_data = receiver.record_audio(duration=5)
 
         if audio_data is None or audio_data.size == 0:
@@ -197,7 +200,7 @@ def interaction_loop(MAX_IDLE, receiver, student_name, conn, mapper, grupa, seri
             continue
 
         question_text = receiver.recognize_audio(audio_data)
-        print(f"[DEBUG] Recognized: {question_text}")
+        print(f"Recognized: {question_text}")
 
         if not question_text:
             speak_response("I didn't understand.")
@@ -239,12 +242,12 @@ def main():
     receiver = None
 
     try:
-        print("[INFO] Initializing Vosk...")
+        print("Initializing Vosk...")
         receiver = StudentReceiver()
-        print("[INFO] System ready.")
+        print("System ready.")
 
         while True:
-            print("\n[INFO] Waiting for student identification...")
+            print("\n Waiting for student identification...")
             student_name = receiver.start_listening()
 
             if not student_name or student_name.strip().lower() == "unknown":
@@ -266,8 +269,8 @@ def main():
 
             student_id, grupa, serie = result
 
-            print(f"[INFO] Student identified: {student_name}")
-            print(f"[DEBUG] Group: {grupa}, Series: {serie}")
+            print(f" Student identified: {student_name}")
+            print(f" Group: {grupa}, Series: {serie}")
 
             interaction_loop(
                 MAX_IDLE=90,
@@ -280,12 +283,12 @@ def main():
             )
 
     except KeyboardInterrupt:
-        print("\n[INFO] Shutting down...")
+        print("\n Shutting down...")
     finally:
         if receiver:
             receiver.cleanup()
         conn.close()
-        print("[INFO] Database connection closed.")
+        print(" Database connection closed.")
 
 
 if __name__ == "__main__":

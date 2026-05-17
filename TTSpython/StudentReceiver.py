@@ -10,7 +10,7 @@ import resampy
 class StudentReceiver:
     def __init__(self, usb_mic_name="AB13X USB Audio", model_path="models/vosk-model-small-en-us-0.15"):
         # Initialize Vosk model
-        print(f"[INFO] Loading Vosk model from {model_path} ...")
+        print(f"Loading Vosk model from {model_path} ...")
         self.model = Model(model_path)
 
         # Sampling rates
@@ -25,14 +25,14 @@ class StudentReceiver:
         self.usb_mic_index = self._detect_usb_mic(self.usb_mic_name)
         dev_info = sd.query_devices(self.usb_mic_index)
         self.native_samplerate = int(dev_info['default_samplerate'])
-        print(f"[INFO] USB mic '{self.usb_mic_name}' at index {self.usb_mic_index}, "
+        print(f"USB mic '{self.usb_mic_name}' at index {self.usb_mic_index}, "
               f"native rate {self.native_samplerate} Hz")
 
         # Create named pipe
         if os.path.exists(self.pipe_path):
             os.remove(self.pipe_path)
         os.mkfifo(self.pipe_path)
-        print(f"[INFO] Created named pipe at {self.pipe_path}")
+        print(f"Created named pipe at {self.pipe_path}")
 
         # Pre-warm mic
         self._prewarm_mic()
@@ -41,10 +41,10 @@ class StudentReceiver:
         for i, dev in enumerate(sd.query_devices()):
             if name in dev['name'] and dev['max_input_channels'] > 0:
                 return i
-        raise RuntimeError(f"[ERROR] USB mic '{name}' not found")
+        raise RuntimeError(f"USB mic '{name}' not found")
 
     def _prewarm_mic(self):
-        print("[INFO] Pre-warming mic...")
+        print("Pre-warming mic...")
         try:
             s = sd.InputStream(
                 device=self.usb_mic_index,
@@ -56,9 +56,9 @@ class StudentReceiver:
             time.sleep(0.3)
             s.stop()
             s.close()
-            print("[INFO] Mic pre-warmed successfully")
+            print("Mic pre-warmed successfully")
         except Exception as e:
-            print(f"[WARN] Mic pre-warm failed: {e}")
+            print(f"Mic pre-warm failed: {e}")
 
     # -------------------------
     # Named pipe
@@ -69,14 +69,14 @@ class StudentReceiver:
                 student_name = pipe.readline().strip()
                 return student_name if student_name else None
         except Exception as e:
-            print(f"[ERROR] Pipe read error: {e}")
+            print(f"Pipe read error: {e}")
             return None
 
     def start_listening(self):
         while True:
             student_name = self.wait_for_student()
             if student_name:
-                print(f"[INFO] Received student: {student_name}")
+                print(f"Received student: {student_name}")
                 return student_name
             time.sleep(0.5)
 
@@ -101,17 +101,17 @@ class StudentReceiver:
                 stream.start()
                 break
             except Exception as e:
-                print(f"[WARN] Mic open failed: {e}")
+                print(f" Mic open failed: {e}")
                 time.sleep(1)
         else:
-            print("[ERROR] Mic failed completely")
+            print("Mic failed completely")
             return None
 
         try:
             while collected < frames_needed:
                 data, overflowed = stream.read(1024)
                 if overflowed:
-                    print("[WARN] Overflow detected")
+                    print("Overflow detected")
                 audio_buffer.append(data)
                 collected += len(data)
         finally:
@@ -168,4 +168,4 @@ class StudentReceiver:
     def cleanup(self):
         if os.path.exists(self.pipe_path):
             os.remove(self.pipe_path)
-            print(f"[INFO] Removed pipe {self.pipe_path}")
+            print(f"Removed pipe {self.pipe_path}")

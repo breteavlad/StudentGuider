@@ -13,7 +13,7 @@ try:
     translator = Translator()
     TRANSLATE_TO_ENGLISH = True
 except Exception as e:
-    print(f"[WARN] googletrans not available ({e}). Titles will remain in Romanian.")
+    print(f" googletrans not available ({e}). Titles will remain in Romanian.")
     TRANSLATE_TO_ENGLISH = False
 
 # Direct URLs
@@ -35,7 +35,7 @@ def get_announcements():
         response = requests.get(ANNOUNCEMENTS_URL, timeout=10)
         response.raise_for_status()
     except Exception as e:
-        print(f"[ERROR] Cannot access announcements page: {e}")
+        print(f" Cannot access announcements page: {e}")
         return []
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -57,7 +57,7 @@ def get_announcements():
             try:
                 translated_title = translator.translate(title, src='ro', dest='en').text
             except Exception as e:
-                print(f"[WARN] Translation failed for '{title}': {e}")
+                print(f" Translation failed for '{title}': {e}")
 
         # Try to find a related link
         announcement_url = ANNOUNCEMENTS_URL
@@ -89,7 +89,7 @@ def get_announcements():
 
     announcements.sort(key=lambda a: a["parsed_date"], reverse=True)
 
-    print(f"[DEBUG] Found {len(announcements)} announcements (sorted by date).")
+    print(f"Found {len(announcements)} announcements (sorted by date).")
     _announcements_cache = announcements
     return announcements
 
@@ -103,7 +103,7 @@ def open_in_browser(url):
             stderr=subprocess.DEVNULL,
             start_new_session=True
         )
-        print(f"[INFO] Opened in Chromium: {url}")
+        print(f"Opened in Chromium: {url}")
         return True
     except FileNotFoundError:
         try:
@@ -113,16 +113,16 @@ def open_in_browser(url):
                 stderr=subprocess.DEVNULL,
                 start_new_session=True
             )
-            print(f"[INFO] Opened in Chromium (alt command).")
+            print(f"Opened in Chromium (alt command).")
             return True
         except Exception as e:
-            print(f"[WARN] Could not open browser: {e}")
+            print(f"Could not open browser: {e}")
             return False
 
 
 def open_schedule():
     """Open the class schedule (Google Sheets)."""
-    print(f"[INFO] Opening schedule: {SCHEDULE_URL}")
+    print(f"Opening schedule: {SCHEDULE_URL}")
 
     if open_in_browser(SCHEDULE_URL):
         return "I've opened the class schedule for you."
@@ -221,13 +221,13 @@ def open_announcement_by_keyword(query):
             best_score = matches
             best_idx = idx
     
-    print(f"[DEBUG] Word-based match score: {best_score}")
+    print(f"Word-based match score: {best_score}")
     
     # If word matching found something good, use it
     if best_score >= 2 and best_idx >= 0:
         ann = announcements[best_idx]
         title = ann['title_en'] if TRANSLATE_TO_ENGLISH else ann['title_ro']
-        print(f"[DEBUG] Selected announcement by word match: '{title}'")
+        print(f"Selected announcement by word match: '{title}'")
         
         if open_in_browser(ann['url']):
             return f"I've opened the announcement: {title}"
@@ -236,7 +236,7 @@ def open_announcement_by_keyword(query):
     
     # Fallback to fuzzy matching
     best_match, score = process.extractOne(query.lower(), [t.lower() for t in titles])
-    print(f"[DEBUG] Fuzzy match for '{query}': '{best_match}' (score={score})")
+    print(f"Fuzzy match for '{query}': '{best_match}' (score={score})")
 
     if score > 60:
         matched_idx = [t.lower() for t in titles].index(best_match)
@@ -281,12 +281,12 @@ def is_announcement_query(question_text):
     # Check both normal and normalized versions
     for keyword in announcement_keywords:
         if keyword in q:
-            print(f"[DEBUG] Detected announcement keyword: '{keyword}'")
+            print(f"Detected announcement keyword: '{keyword}'")
             return True
         # Also check without spaces
         keyword_normalized = keyword.replace(" ", "")
         if keyword_normalized in q_normalized:
-            print(f"[DEBUG] Detected announcement keyword (normalized): '{keyword}'")
+            print(f"Detected announcement keyword (normalized): '{keyword}'")
             return True
     
     return False
@@ -319,13 +319,13 @@ def open_schedule_for_student_2(student_name, conn):
     if not result:
         return "Sorry, I couldn't find your group in the database."
 
-    grupa = result[0].upper()  
+    grupa = result[0].upper()  # e.g., '30243R'
 
     #  Extract year and section
     if len(grupa) < 2:
         return f"Invalid group code: {grupa}"
 
-    year_digit = grupa[-2]  # second-to-last digit → year
+    year_digit = grupa[-3]  # second-to-last digit → year
     section = grupa[-1]     # last character → section/language
     key = f"{year_digit}{section}"
 

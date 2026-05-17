@@ -89,7 +89,7 @@ class MapAssistant:
                     return closest
                     
             except Exception as e:
-                print(f"[DEBUG] Query failed: {e}")
+                print(f"Query failed: {e}")
                 continue
         
         return None
@@ -97,42 +97,42 @@ class MapAssistant:
     def generate_map(self, place_name):
         start = self.geolocator.geocode(self.start_address)
         if not start:
-            print("[ERROR] Start address not found.")
+            print("Start address not found.")
             return None
 
         # Detect "closest" type queries
         if "closest" in place_name.lower() or "nearest" in place_name.lower():
             keyword = place_name.lower().replace("closest", "").replace("nearest", "").strip()
             if not keyword:
-                print("[WARN] No place type found in query.")
+                print("No place type found in query.")
                 return None
 
             result = self.search_place_osm(keyword, start.latitude, start.longitude)
             if not result:
-                print(f"[WARN] No nearby {keyword} found.")
+                print(f"No nearby {keyword} found.")
                 return None
             
             dest_name, dest_lat, dest_lon = result
             dest_coords = (dest_lat, dest_lon)
         else:
             # Try OSM search first
-            print(f"[DEBUG] Searching OSM for: {place_name}")
+            print(f"Searching OSM for: {place_name}")
             osm_result = self.search_place_osm(place_name, start.latitude, start.longitude)
             
             if osm_result:
                 dest_name, dest_lat, dest_lon = osm_result
                 dest_coords = (dest_lat, dest_lon)
-                print(f"[INFO] Found via OSM: {dest_name} at ({dest_lat}, {dest_lon})")
+                print(f"Found via OSM: {dest_name} at ({dest_lat}, {dest_lon})")
             else:
                 # Fallback to direct geocoding
-                print(f"[DEBUG] OSM search failed, trying geocoding for: {place_name}")
+                print(f"OSM search failed, trying geocoding for: {place_name}")
                 dest = self.geolocator.geocode(place_name + ", Cluj-Napoca, Romania")
                 if not dest:
-                    print(f"[ERROR] Destination '{place_name}' not found.")
+                    print(f"Destination '{place_name}' not found.")
                     return None
                 dest_name = place_name
                 dest_coords = (dest.latitude, dest.longitude)
-                print(f"[INFO] Found via geocoding: {dest_name} at {dest_coords}")
+                print(f"Found via geocoding: {dest_name} at {dest_coords}")
 
         # Get route from ORS
         try:
@@ -142,7 +142,7 @@ class MapAssistant:
             decoded = openrouteservice.convert.decode_polyline(geometry)
             dist_km = route['routes'][0]['summary']['distance'] / 1000
         except Exception as e:
-            print(f"[ERROR] Routing failed: {e}")
+            print(f"Routing failed: {e}")
             dist_km = geodesic((start.latitude, start.longitude), dest_coords).km
             decoded = None
 
@@ -157,7 +157,7 @@ class MapAssistant:
         map_file = os.path.abspath("route_map.html")
         m.save(map_file)
         
-        #  Open browser in background without blocking
+        # 🔥 CRITICAL FIX: Open browser in background without blocking
         try:
             # Use subprocess.Popen with DETACHED_PROCESS to not block
             subprocess.Popen(
@@ -166,7 +166,7 @@ class MapAssistant:
                 stderr=subprocess.DEVNULL,
                 start_new_session=True  # Detach from parent process
             )
-            print(f"[INFO] Map opened in browser (non-blocking)")
+            print(f"Map opened in browser (non-blocking)")
         except FileNotFoundError:
             # Fallback if chromium-browser not found
             try:
@@ -176,11 +176,11 @@ class MapAssistant:
                     stderr=subprocess.DEVNULL,
                     start_new_session=True
                 )
-                print(f"[INFO] Map opened in browser (non-blocking)")
+                print(f"Map opened in browser (non-blocking)")
             except:
-                print(f"[WARN] Could not open browser automatically")
+                print(f"Could not open browser automatically")
 
-        print(f"[INFO] Map saved to {map_file} - {dest_name} ({dist_km:.2f} km away).")
+        print(f"Map saved to {map_file} - {dest_name} ({dist_km:.2f} km away).")
         
-        
+        # ✅ Return both values clearly
         return (float(dist_km), dest_name)
