@@ -5,7 +5,7 @@ import json
 import sqlite3
 
 # Raspberry Pi IP and port
-PI_HOST = "192.168.1.108"  # Replace with your Pi's IP
+PI_HOST = "192.168.1.108"
 PI_PORT = 9999
 DB_FILE="students_db.db"
 
