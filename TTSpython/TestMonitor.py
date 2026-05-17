@@ -157,7 +157,7 @@ class MapAssistant:
         map_file = os.path.abspath("route_map.html")
         m.save(map_file)
         
-        # 🔥 CRITICAL FIX: Open browser in background without blocking
+        
         try:
             # Use subprocess.Popen with DETACHED_PROCESS to not block
             subprocess.Popen(
@@ -182,5 +182,5 @@ class MapAssistant:
 
         print(f"Map saved to {map_file} - {dest_name} ({dist_km:.2f} km away).")
         
-        # ✅ Return both values clearly
+        
         return (float(dist_km), dest_name)
