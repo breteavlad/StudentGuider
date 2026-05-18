@@ -188,68 +188,6 @@ def open_announcement_by_number(number_str):
         return "Sorry, I couldn't open the announcement."
 
 
-def open_announcement_by_keyword(query):
-    """Open an announcement based on a fuzzy keyword match."""
-    announcements = get_announcements()
-
-    if not announcements:
-        return "Sorry, I couldn't find any announcements."
-
-    # Normalize the query (remove spaces for compound words like "deep mind" -> "deepmind")
-    normalized_query = query.lower().replace(" ", "")
-    
-    # Use English titles for matching if translated
-    titles = [a['title_en'] if TRANSLATE_TO_ENGLISH else a['title_ro'] for a in announcements]
-    
-    # Try exact word matching first (more reliable for specific topics)
-    best_score = 0
-    best_idx = -1
-    
-    for idx, title in enumerate(titles):
-        title_lower = title.lower()
-        normalized_title = title_lower.replace(" ", "")
-        
-        # Check if any word from query appears in title
-        query_words = query.lower().split()
-        matches = sum(1 for word in query_words if len(word) > 2 and word in title_lower)
-        
-        # Also check normalized version (for compound words)
-        if normalized_query in normalized_title:
-            matches += 3
-        
-        if matches > best_score:
-            best_score = matches
-            best_idx = idx
-    
-    print(f"Word-based match score: {best_score}")
-    
-    # If word matching found something good, use it
-    if best_score >= 2 and best_idx >= 0:
-        ann = announcements[best_idx]
-        title = ann['title_en'] if TRANSLATE_TO_ENGLISH else ann['title_ro']
-        print(f"Selected announcement by word match: '{title}'")
-        
-        if open_in_browser(ann['url']):
-            return f"I've opened the announcement: {title}"
-        else:
-            return "Sorry, I couldn't open the announcement."
-    
-    # Fallback to fuzzy matching
-    best_match, score = process.extractOne(query.lower(), [t.lower() for t in titles])
-    print(f"Fuzzy match for '{query}': '{best_match}' (score={score})")
-
-    if score > 60:
-        matched_idx = [t.lower() for t in titles].index(best_match)
-        ann = announcements[matched_idx]
-        title = ann['title_en'] if TRANSLATE_TO_ENGLISH else ann['title_ro']
-
-        if open_in_browser(ann['url']):
-            return f"I've opened the announcement: {title}"
-        else:
-            return "Sorry, I couldn't open the announcement."
-    else:
-        return "I couldn't find a specific match. Here are the latest announcements: " + list_announcements_verbally()
-
 
 def is_schedule_query(question_text):
     """Check if the user asked for the schedule."""
